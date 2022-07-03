@@ -1016,9 +1016,15 @@ impl TcpStream {
     /// [`read`]: fn@crate::io::AsyncReadExt::read
     /// [`AsyncReadExt`]: trait@crate::io::AsyncReadExt
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        use std::io::Read;
         self.io
             .registration()
-            .async_io(Interest::READABLE, || self.io.peek(buf))
+            .async_io(Interest::READABLE, || {
+                unsafe {
+                    &mut *((&*self.io as *const mio::net::TcpStream) as *mut mio::net::TcpStream)
+                }.read(&mut []).ok();
+                self.io.peek(buf)
+            })
             .await
     }
 
