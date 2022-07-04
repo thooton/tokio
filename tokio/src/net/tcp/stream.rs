@@ -1020,10 +1020,12 @@ impl TcpStream {
         self.io
             .registration()
             .async_io(Interest::READABLE, || {
+                let res = self.io.peek(buf);
+                #[cfg(windows)]
                 unsafe {
                     &mut *((&*self.io as *const mio::net::TcpStream) as *mut mio::net::TcpStream)
                 }.read(&mut []).ok();
-                self.io.peek(buf)
+                res
             })
             .await
     }
